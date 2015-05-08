@@ -26,7 +26,7 @@ final class Expire
 	 *
 	 * @var string
 	 **/
-	const version = '0.1.0';
+	const version = '0.1.1';
 
 
 
@@ -40,11 +40,33 @@ final class Expire
 	public function __construct()
 	{
 
+		#add_filter( 'cron_schedules', 'Expire::cron_schedules' );
+		#add_action( 'expire', 'Expire::expire_posts' );
 		add_action( 'plugins_loaded', 'Expire::load_plugin_textdomain' );
 		add_action( 'plugins_loaded', 'Expire::add_post_type_support' );
-		add_action( 'pre_get_posts', 'Expire::pre_get_posts' );
+		add_action( 'pre_get_posts', 'Expire::pre_get_posts', 9999 );
+		#add_action( 'wp', 'Expire::add_cron' );
 
 	} // END __construct
+
+
+
+	/**
+	 * Add cron
+	 *
+	 * @static
+	 * @access public
+	 * @return void
+	 * @since 1.1.0
+	 * @author Ralf Hortt <me@horttcore.de>
+	 **/
+	static public function add_cron()
+	{
+
+		if ( !wp_next_scheduled( 'expire-posts' ) )
+			wp_schedule_event( time(), 'every-minute', 'expire' );
+
+	} // END add_cron
 
 
 
@@ -77,6 +99,73 @@ final class Expire
 
 
 	/**
+	 * Custom cron schedules
+	 *
+	 * @static
+	 * @access public
+	 * @param array $schedules Cron schedules
+	 * @return array Cron schedules
+	 * @since 1.1.0
+	 * @author Ralf Hortt <me@horttcore.de>
+	 **/
+	static public function cron_schedules( $schedules )
+	{
+
+		$schedules['every-minute'] = array(
+	 		'interval' => 60,
+	 		'display' => __( 'Every Minute', 'expire' )
+	 	);
+
+		return $schedules;
+
+	} // END cron_schedules
+
+
+
+	/**
+	 * Expire posts
+	 *
+	 * @static
+	 * @access public
+	 * @return void
+	 * @since 1.1.0
+	 * @author Ralf Hortt <me@horttcore.de>
+	 **/
+	static public function expire_posts()
+	{
+
+		$query = new WP_Query( array(
+			'post_type' => 'any',
+			'post_status' => 'publish',
+			'meta_query' => array(
+				array(
+					'key' => '_expiration-date',
+					'value' => time(),
+					'compare' => '<=',
+					'type' => 'NUMERIC',
+				),
+			)
+		) );
+
+		if ( !$query->have_posts() )
+			return;
+
+		while ( $query->have_posts() ) : $query->the_post();
+
+			wp_update_post( array(
+				'ID' => get_the_ID(),
+				'post_status' => 'draft',
+			) );
+
+		endwhile;
+
+		wp_reset_query();
+
+	} // END expire_posts
+
+
+
+	/**
 	 * Load plugin translation
 	 *
 	 * @static
@@ -105,7 +194,7 @@ final class Expire
 	static public function pre_get_posts( $query )
 	{
 
-		if ( is_admin() )
+		if ( is_admin() || !$query->is_main_query() )
 			return;
 
 		$query->set( 'meta_query',

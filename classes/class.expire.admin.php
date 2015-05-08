@@ -33,7 +33,8 @@ final class Expire_Admin
 		add_action( 'admin_enqueue_scripts', 'Expire_Admin::register_assets' );
 		add_action( 'admin_print_scripts-post.php', 'Expire_Admin::enqueue_script' );	# Enqueue scripts
 		add_action( 'admin_print_styles-post.php', 'Expire_Admin::enqueue_style' );		# Enqueue styles
-		add_action( 'plugins_loaded', 'Expire_Admin::add_admin_colums' );
+		add_action( 'admin_head', 'Expire_Admin::add_admin_colums' );
+		add_action( 'pre_get_posts', 'Expire_Admin::pre_get_posts' );
 		add_action( 'post_submitbox_misc_actions', 'Expire_Admin::add_expiring_field' );
 		add_action( 'save_post', 'Expire_Admin::save_post', 10, 2 );
 
@@ -77,8 +78,8 @@ final class Expire_Admin
 
 		global $post;
 
-		$label = ( get_expiration_date( $post->ID ) ) ? get_expiration_date( $post->ID, apply_filters( 'expire-date-format', get_option( 'date_format' ) ) ) : __( 'Never' );
-		$datetime = get_expiration_date( $post->ID, apply_filters( 'expire-date-format', get_option( 'date_format' ) ) );
+		$label = ( get_expiration_date( $post->ID ) ) ? get_expiration_date( $post->ID, apply_filters( 'expire-date-format', __( 'm.d.Y - H:i', 'expire' ) ) ) : __( 'Never' );
+		$datetime = get_expiration_date( $post->ID, apply_filters( 'expire-date-format', __( 'm.d.Y - H:i', 'expire' ) ) );
 
 		?>
 
@@ -141,18 +142,21 @@ final class Expire_Admin
 			switch ( $post_type ) :
 
 				case 'post' :
-					add_filter( 'manage_posts_columns', 'Expire_Admin::add_column' );
 					add_action( 'manage_posts_custom_column', 'Expire_Admin::render_column', 10, 2 );
+					add_filter( 'manage_posts_columns', 'Expire_Admin::add_column' );
+					add_filter( 'manage_edit-posts_sortable_columns', 'Expire_Admin::sortable_columns' );
 					break;
 
 				case 'page' :
-					add_filter( 'manage_pages_columns', 'Expire_Admin::add_column' );
 					add_action( 'manage_pages_custom_column', 'Expire_Admin::render_column', 10, 2 );
+					add_filter( 'manage_pages_columns', 'Expire_Admin::add_column' );
+					add_filter( 'manage_edit-page_sortable_columns', 'Expire_Admin::sortable_columns' );
 					break;
 
 				default :
-					add_filter( 'manage_' . $post_type . '_posts_columns', 'Expire_Admin::add_column' );
 					add_action( 'manage_' . $post_type . '_custom_column', 'Expire_Admin::render_column', 10, 2 );
+					add_filter( 'manage_' . $post_type . '_posts_columns', 'Expire_Admin::add_column' );
+					add_filter( 'manage_edit-' . $post_type . '_sortable_columns', 'Expire_Admin::sortable_columns' );
 					break;
 
 			endswitch;
@@ -185,8 +189,8 @@ final class Expire_Admin
 		wp_enqueue_script( 'expire' );
 		wp_localize_script( 'expire', 'Expire', array(
 			'pickerConf' => apply_filters( 'expire-picker-configuration', array(
-				'timepicker' => apply_filters( 'expire-timepicker', FALSE ),
-				'format' => apply_filters( 'expire-date-format', get_option( 'date_format' ) ),
+				'timepicker' => apply_filters( 'expire-timepicker', TRUE ),
+				'format' => apply_filters( 'expire-date-format', __( 'm.d.Y - H:i', 'expire' ) ),
 				'lang' => apply_filters( 'expire-datepicker-language', $language ),
 			)),
 			'never' => __( 'Never' ),
@@ -214,6 +218,29 @@ final class Expire_Admin
 		wp_enqueue_style( 'expire' );
 
 	} // END enqueue_style
+
+
+
+	/**
+	 * Sort by expiration date
+	 *
+	 * @static
+	 * @access public
+	 * @param WP_Query $query Query object
+	 * @return void
+	 * @author Ralf Hortt <me@horttcore.de>
+	 * @since 1.1.0
+	 **/
+	static public function pre_get_posts( $query )
+	{
+
+		if ( 'expire' != $query->get( 'orderby' ) )
+			return;
+
+		$query->set( 'meta_key', '_expiration-date' );
+        $query->set( 'orderby', 'meta_value_num' );
+
+	} // END pre_get_posts
 
 
 
@@ -253,7 +280,7 @@ final class Expire_Admin
 		switch ( $column ) :
 
 			case 'expire' :
-				echo get_expiration_date( $post_id, apply_filters( 'expire-date-format', get_option( 'date_format' ) ) );
+				echo get_expiration_date( $post_id, apply_filters( 'expire-date-format', __( 'm.d.Y - H:i', 'expire' ) ) );
 				break;
 
 		endswitch;
@@ -285,8 +312,8 @@ final class Expire_Admin
 			return;
 
 		if ( $_POST['expiration-date'] ) :
-			$datetime = DateTime::createFromFormat( apply_filters( 'expire-date-format', get_option( 'date_format' ) ), $_POST['expiration-date'] );
-			$timestamp = $datetime->getTimestamp();
+			$datetime = DateTime::createFromFormat( apply_filters( 'expire-date-format', __( 'm.d.Y - H:i', 'expire' ) ), $_POST['expiration-date'] );
+			$timestamp = ( $datetime ) ? $datetime->getTimestamp() : NULL;
 		else :
 			$timestamp = NULL;
 		endif;
@@ -295,6 +322,26 @@ final class Expire_Admin
 
 	} // END save_post
 
+
+
+	/**
+	 * Sortable columns
+	 *
+	 * @static
+	 * @access public
+	 * @param array $columns Sortable columns
+	 * @return array Sortable columns
+	 * @author Ralf Hortt <me@horttcore.de>
+	 * @since 1.1.0
+	 **/
+	static public function sortable_columns( $columns )
+	{
+
+		$columns['expire'] = 'expire';
+
+		return $columns;
+
+	} // END sortable_columns
 
 
 } // END final class Expire_Admin

@@ -21,7 +21,7 @@ jQuery(document).ready(function(){
 		bindings:function(){
 
 			// Datepicker
-			Plugin.expireField.datetimepicker(Expire.pickerConf);
+			Plugin.expireField.expireDatetimepicker(Expire.pickerConf);
 			Plugin.expireField.change(function(){
 				if ( '' === Plugin.expireField.val() )
 					Plugin.date.html(Expire.never);

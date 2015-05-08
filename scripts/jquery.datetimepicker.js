@@ -687,7 +687,7 @@
 		});
 	};
 
-	$.fn.datetimepicker = function (opt) {
+	$.fn.expireDatetimepicker = function (opt) {
 		var KEY0 = 48,
 			KEY9 = 57,
 			_KEY0 = 96,
@@ -1958,7 +1958,7 @@
 			}
 		});
 	};
-	$.fn.datetimepicker.defaults = default_options;
+	$.fn.expireDatetimepicker.defaults = default_options;
 }(jQuery));
 
 function HighlightedDate(date, desc, style) {

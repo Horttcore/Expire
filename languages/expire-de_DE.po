@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Expire v0.1.0\n"
+"Project-Id-Version: Expire v0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2015-04-21 11:31:17+0000\n"
+"PO-Revision-Date: 2015-05-04 09:03:49+0000\n"
 "Last-Translator: horttcore <me@horttcore.de>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -80,9 +80,17 @@ msgstr ""
 msgid "http://horttcore.de/"
 msgstr ""
 
+#: classes/class.expire.admin.php:80
+#: classes/class.expire.admin.php:81
+#: classes/class.expire.admin.php:189
+#: classes/class.expire.admin.php:256
+#@ expire
+msgid "m.d.Y - H:i"
+msgstr "d.m.Y - H:i"
+
 #. translators: plugin header field 'Version'
 #: plugin.php:0
 #@ expire
-msgid "0.1.0"
+msgid "0.1.1"
 msgstr ""
 

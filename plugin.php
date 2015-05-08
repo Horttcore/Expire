@@ -4,10 +4,10 @@
  * Plugin URI:
  * Text Domain: expire
  * Domain Path: /languages
- * Description: Expiration date for post types
+ * Description: Expire date post types
  * Author: Ralf Hortt
  * Author URI: http://horttcore.de/
- * Version: 0.1.0
+ * Version: 0.1.1
  */
 
 
